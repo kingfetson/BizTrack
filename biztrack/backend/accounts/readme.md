@@ -16,3 +16,11 @@ function Write-PyFile {
 }
 
 Get-Command Write-PyFile | Select-Object Name, CommandType
+
+
+function Refresh-Path {
+    $machinePath = [Environment]::GetEnvironmentVariable("Path", "Machine")
+    $userPath    = [Environment]::GetEnvironmentVariable("Path", "User")
+    $env:Path    = "$machinePath;$userPath"
+    Write-Host "PATH refreshed from persistent environment variables."
+}
