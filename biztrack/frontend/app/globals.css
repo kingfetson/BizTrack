@@ -1,11 +1,9 @@
-/* stylelint-disable at-rule-no-unknown */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-/* stylelint-enable at-rule-no-unknown */
 
 :root {
-  --background: #442706;
+  --background: #250253;
   --foreground: #0f172a;
 }
 
@@ -21,11 +19,38 @@ html, body {
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 a {
   color: inherit;
   text-decoration: none;
+}
+
+/* Custom scrollbar - light */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgb(15 23 42 / 0.12);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgb(15 23 42 / 0.24); }
+
+/* Dark surface scrollbar */
+.dark-scroll::-webkit-scrollbar-thumb {
+  background: rgb(255 255 255 / 0.12);
+}
+.dark-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgb(255 255 255 / 0.24);
+}
+
+/* Subtle grid background utility */
+.bg-grid-16 {
+  background-image:
+    linear-gradient(to right, rgb(15 23 42 / 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(15 23 42 / 0.04) 1px, transparent 1px);
+  background-size: 16px 16px;
 }

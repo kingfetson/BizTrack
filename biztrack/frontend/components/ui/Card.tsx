@@ -1,11 +1,22 @@
 type Props = {
   children: React.ReactNode;
   className?: string;
+  variant?: "light" | "elevated" | "dark";
 };
 
-export default function Card({ children, className = "" }: Props) {
+const variants = {
+  light: "bg-white border border-ink-200/70 shadow-soft",
+  elevated: "bg-white border border-ink-200/60 shadow-card",
+  dark: "bg-ink-900/80 backdrop-blur border border-white/5 shadow-elevated text-white",
+};
+
+export default function Card({
+  children,
+  className = "",
+  variant = "elevated",
+}: Props) {
   return (
-    <div className={`bg-green-100 rounded-xl border border-slate-200 shadow-sm p-6 ${className}`}>
+    <div className={`rounded-xl ${variants[variant]} ${className}`}>
       {children}
     </div>
   );

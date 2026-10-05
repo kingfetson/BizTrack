@@ -52,23 +52,23 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Navbar */}
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="w-8 h-8 rounded-lg bg-brand-600 text-white grid place-items-center font-bold">B</span>
-            <span className="text-lg font-semibold text-slate-900">BizTrack</span>
-          </Link>
-          <nav className="hidden md:flex items-center gap-8 text-sm text-slate-600">
-            <a href="#features" className="hover:text-slate-900">Features</a>
-            <a href="#how" className="hover:text-slate-900">How it works</a>
-            <a href="#pricing" className="hover:text-slate-900">Pricing</a>
-          </nav>
-          <div className="flex items-center gap-3">
-            <Link href="/login"><Button variant="ghost">Log in</Button></Link>
-            <Link href="/register"><Button>Get started</Button></Link>
-          </div>
-        </div>
-      </header>
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-ink-200/70">
+  <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+    <Link href="/" className="flex items-center gap-2.5">
+      <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-white grid place-items-center font-bold shadow-glow text-sm">B</span>
+      <span className="text-lg font-semibold text-ink-900 tracking-tight">BizTrack</span>
+    </Link>
+    <nav className="hidden md:flex items-center gap-8 text-sm text-ink-600">
+      <a href="#features" className="hover:text-ink-900 transition-colors">Features</a>
+      <a href="#how" className="hover:text-ink-900 transition-colors">How it works</a>
+      <a href="#pricing" className="hover:text-ink-900 transition-colors">Pricing</a>
+    </nav>
+    <div className="flex items-center gap-2">
+      <Link href="/login"><Button variant="ghost" size="sm">Log in</Button></Link>
+      <Link href="/register"><Button size="sm">Get started</Button></Link>
+    </div>
+  </div>
+</header>
 
       {/* Hero */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-20 text-center">
