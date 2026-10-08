@@ -6,7 +6,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from businesses.models import Business, BusinessMember
-from .models import Category, Product
+from .models import Category, Product, StockLevel, StockMovement
 
 User = get_user_model()
 
@@ -232,3 +232,194 @@ class ProductAPITests(APITestCase):
         inactive = self.client.get(url + "?is_active=false").data
         self.assertEqual(len(inactive), 1)
         self.assertEqual(inactive[0]["name"], "Inactive")
+
+# ============================================================================
+# Stock tests
+# ============================================================================
+class StockTests(APITestCase):
+
+    def setUp(self):
+        # Users
+        self.owner = User.objects.create_user(
+            email="owner@biztrack.local", password="StrongPass123!"
+        )
+        self.manager = User.objects.create_user(
+            email="manager@biztrack.local", password="StrongPass123!"
+        )
+        self.staff = User.objects.create_user(
+            email="staff@biztrack.local", password="StrongPass123!"
+        )
+        self.outsider = User.objects.create_user(
+            email="outsider@biztrack.local", password="StrongPass123!"
+        )
+
+        # Business
+        self.business = Business.objects.create(name="Shop", currency="KES")
+        BusinessMember.objects.create(user=self.owner, business=self.business, role="OWNER")
+        BusinessMember.objects.create(user=self.manager, business=self.business, role="MANAGER")
+        BusinessMember.objects.create(user=self.staff, business=self.business, role="STAFF")
+
+        # Second business owned by outsider
+        self.other_business = Business.objects.create(name="Other", currency="KES")
+        BusinessMember.objects.create(user=self.outsider, business=self.other_business, role="OWNER")
+
+        # Product in the first business
+        self.product = Product.objects.create(
+            business=self.business, name="Coke 500ml", sku="COKE-500",
+            price=Decimal("60.00"), cost=Decimal("40.00"),
+        )
+
+        self._login("owner@biztrack.local")
+
+    def _login(self, email):
+        resp = self.client.post(reverse("login"), {
+            "email": email, "password": "StrongPass123!",
+        })
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {resp.data['access']}")
+
+    # ------------------------------------------------------------------
+    # Auto-creation
+    # ------------------------------------------------------------------
+
+    def test_stock_level_auto_created(self):
+        self.assertTrue(StockLevel.objects.filter(product=self.product).exists())
+
+    def test_initial_movement_written(self):
+        m = StockMovement.objects.filter(product=self.product)
+        self.assertEqual(m.count(), 1)
+        self.assertEqual(m.first().reason, "INITIAL")
+        self.assertEqual(m.first().quantity_delta, 0)
+
+    # ------------------------------------------------------------------
+    # Retrieve
+    # ------------------------------------------------------------------
+
+    def test_retrieve_stock(self):
+        url = reverse("stock-detail", args=[self.business.id, self.product.id])
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data["quantity"], 0)
+        self.assertEqual(resp.data["low_stock_threshold"], 5)
+        self.assertTrue(resp.data["is_low"])  # 0 <= 5
+
+    # ------------------------------------------------------------------
+    # Adjust
+    # ------------------------------------------------------------------
+
+    def test_adjust_stock_increases_quantity(self):
+        url = reverse("stock-adjust", args=[self.business.id, self.product.id])
+        resp = self.client.post(url, {
+            "delta": 20, "reason": "PURCHASE", "note": "Restock",
+        })
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data["quantity"], 20)
+
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.stock.quantity, 20)
+
+    def test_adjust_stock_writes_movement(self):
+        url = reverse("stock-adjust", args=[self.business.id, self.product.id])
+        self.client.post(url, {"delta": 15, "reason": "PURCHASE"})
+
+        movements = StockMovement.objects.filter(product=self.product).order_by("created_at")
+        self.assertEqual(movements.count(), 2)  # INITIAL + PURCHASE
+        last = movements.last()
+        self.assertEqual(last.reason, "PURCHASE")
+        self.assertEqual(last.quantity_delta, 15)
+        self.assertEqual(last.quantity_after, 15)
+        self.assertEqual(last.created_by, self.owner)
+
+    def test_adjust_stock_decreases_quantity(self):
+        url = reverse("stock-adjust", args=[self.business.id, self.product.id])
+        self.client.post(url, {"delta": 20, "reason": "PURCHASE"})
+        resp = self.client.post(url, {"delta": -5, "reason": "SALE"})
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data["quantity"], 15)
+
+    def test_cannot_go_below_zero(self):
+        url = reverse("stock-adjust", args=[self.business.id, self.product.id])
+        resp = self.client.post(url, {"delta": -10, "reason": "SALE"})
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("below zero", resp.data["detail"].lower())
+
+    def test_zero_delta_rejected(self):
+        url = reverse("stock-adjust", args=[self.business.id, self.product.id])
+        resp = self.client.post(url, {"delta": 0, "reason": "ADJUSTMENT"})
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_initial_reason_rejected(self):
+        url = reverse("stock-adjust", args=[self.business.id, self.product.id])
+        resp = self.client.post(url, {"delta": 5, "reason": "INITIAL"})
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_unknown_reason_rejected(self):
+        url = reverse("stock-adjust", args=[self.business.id, self.product.id])
+        resp = self.client.post(url, {"delta": 5, "reason": "MAGIC"})
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    # ------------------------------------------------------------------
+    # Isolation
+    # ------------------------------------------------------------------
+
+    def test_outsider_cannot_view_stock(self):
+        self._login("outsider@biztrack.local")
+        url = reverse("stock-detail", args=[self.business.id, self.product.id])
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_outsider_cannot_adjust_stock(self):
+        self._login("outsider@biztrack.local")
+        url = reverse("stock-adjust", args=[self.business.id, self.product.id])
+        resp = self.client.post(url, {"delta": 10, "reason": "PURCHASE"})
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+    # ------------------------------------------------------------------
+    # Roles
+    # ------------------------------------------------------------------
+
+    def test_staff_can_view_but_not_adjust(self):
+        self._login("staff@biztrack.local")
+
+        detail_url = reverse("stock-detail", args=[self.business.id, self.product.id])
+        self.assertEqual(self.client.get(detail_url).status_code, status.HTTP_200_OK)
+
+        adjust_url = reverse("stock-adjust", args=[self.business.id, self.product.id])
+        resp = self.client.post(adjust_url, {"delta": 10, "reason": "PURCHASE"})
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_manager_can_adjust(self):
+        self._login("manager@biztrack.local")
+        url = reverse("stock-adjust", args=[self.business.id, self.product.id])
+        resp = self.client.post(url, {"delta": 10, "reason": "PURCHASE"})
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+    # ------------------------------------------------------------------
+    # Movements list
+    # ------------------------------------------------------------------
+
+    def test_movements_list_returns_history(self):
+        url = reverse("stock-adjust", args=[self.business.id, self.product.id])
+        self.client.post(url, {"delta": 20, "reason": "PURCHASE"})
+        self.client.post(url, {"delta": -3, "reason": "SALE"})
+
+        list_url = reverse("stock-movements", args=[self.business.id, self.product.id])
+        resp = self.client.get(list_url)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        # 3 movements: INITIAL, PURCHASE, SALE
+        self.assertEqual(len(resp.data), 3)
+
+    def test_movements_filter_by_reason(self):
+        url = reverse("stock-adjust", args=[self.business.id, self.product.id])
+        self.client.post(url, {"delta": 20, "reason": "PURCHASE"})
+        self.client.post(url, {"delta": -3, "reason": "SALE"})
+
+        list_url = reverse("stock-movements", args=[self.business.id, self.product.id])
+        resp = self.client.get(list_url + "?reason=PURCHASE")
+        self.assertEqual(len(resp.data), 1)
+        self.assertEqual(resp.data[0]["reason"], "PURCHASE")
+
+    def test_outsider_cannot_list_movements(self):
+        self._login("outsider@biztrack.local")
+        url = reverse("stock-movements", args=[self.business.id, self.product.id])
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)

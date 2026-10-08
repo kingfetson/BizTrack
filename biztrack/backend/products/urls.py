@@ -5,6 +5,9 @@ from .views import (
     CategoryDetailView,
     ProductListCreateView,
     ProductDetailView,
+    StockDetailView,
+    StockAdjustView,
+    StockMovementListView,
 )
 
 urlpatterns = [
@@ -15,4 +18,9 @@ urlpatterns = [
     # Products
     path("products/", ProductListCreateView.as_view(), name="product-list-create"),
     path("products/<int:pk>/", ProductDetailView.as_view(), name="product-detail"),
+
+    # Stock
+    path("products/<int:pk>/stock/", StockDetailView.as_view(), name="stock-detail"),
+    path("products/<int:pk>/stock/adjust/", StockAdjustView.as_view(), name="stock-adjust"),
+    path("products/<int:pk>/movements/", StockMovementListView.as_view(), name="stock-movements"),
 ]

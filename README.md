@@ -539,6 +539,32 @@ All product and category endpoints are nested under a business.
 - [x] Category management page
 - [x] Business context provider + active-business switcher in sidebar
 
+### Stock
+
+Stock is tracked per product. The quantity is cached in `StockLevel`;
+every change writes a `StockMovement` audit row in the same transaction.
+
+| Method | Endpoint | Auth | Purpose |
+|--------|----------|------|---------|
+| GET | `/api/businesses/<id>/products/<pid>/stock/` | Member | Current stock level |
+| POST | `/api/businesses/<id>/products/<pid>/stock/adjust/` | Manager+ | `{delta, reason, note}` — positive to add, negative to remove |
+| GET | `/api/businesses/<id>/products/<pid>/movements/` | Member | Movement history (supports `?reason=`, `?limit=`) |
+
+**Movement reasons:** `INITIAL`, `PURCHASE`, `SALE`, `ADJUSTMENT`, `RETURN`, `TRANSFER`, `LOSS`.
+`INITIAL` is reserved for automatic creation; manual adjustments cannot use it.
+
+**Stage 3 — Inventory & Stock Movements** ✅
+
+- [x] `StockLevel` (one-to-one with Product) auto-created via signal
+- [x] `StockMovement` append-only audit log with 7 reason types
+- [x] `adjust_stock()` service — the only way to change quantity
+- [x] Row-level locking (`select_for_update`) prevents lost updates
+- [x] Quantity never goes below zero
+- [x] Role enforcement: STAFF reads, MANAGER+ adjusts
+- [x] 17 new tests, all passing (44 total)
+- [x] Products list shows live stock with low-stock badge
+- [x] Edit page: stock card, adjust modal, movement history table
+- [x] Serializer-level uniqueness on SKU and category name → clean 400s
 
 License
 Proprietary — © BizTrack. All rights reserved.
