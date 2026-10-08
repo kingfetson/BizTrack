@@ -511,6 +511,35 @@ Not yet implemented: Products, Inventory, Stock movements, Sales,
 Purchases, Customers, Suppliers, Expenses, Invoices, Reports, POS, M-Pesa,
 Subscriptions.
 
+### Products & Categories
+
+All product and category endpoints are nested under a business.
+
+| Method | Endpoint | Auth | Purpose |
+|--------|----------|------|---------|
+| GET | `/api/businesses/<id>/categories/` | Member | List categories (with product counts) |
+| POST | `/api/businesses/<id>/categories/` | Manager+ | Create category |
+| PATCH/PUT | `/api/businesses/<id>/categories/<pk>/` | Manager+ | Update category |
+| DELETE | `/api/businesses/<id>/categories/<pk>/` | Manager+ | Delete (products become uncategorized) |
+| GET | `/api/businesses/<id>/products/` | Member | List (supports `?search=`, `?category=`, `?is_active=`) |
+| POST | `/api/businesses/<id>/products/` | Manager+ | Create product |
+| GET | `/api/businesses/<id>/products/<pk>/` | Member | Retrieve |
+| PATCH/PUT | `/api/businesses/<id>/products/<pk>/` | Manager+ | Update |
+| DELETE | `/api/businesses/<id>/products/<pk>/` | Manager+ | Delete |
+
+**Stage 2 — Products** ✅
+
+- [x] `Category` and `Product` models scoped to a business
+- [x] Partial unique constraint on SKU per business (when non-empty)
+- [x] Cross-tenant category validation
+- [x] Role enforcement: STAFF reads, MANAGER+ writes
+- [x] 15 new tests, all passing (27 total)
+- [x] Products list with live search / category / status filters
+- [x] Create / edit / delete product pages
+- [x] Category management page
+- [x] Business context provider + active-business switcher in sidebar
+
+
 License
 Proprietary — © BizTrack. All rights reserved.
 '@
