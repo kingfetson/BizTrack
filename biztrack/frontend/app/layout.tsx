@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-// @ts-expect-error Next.js processes this stylesheet import at build time.
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth";
+import { ThemeProvider } from "@/lib/theme";
 
 export const metadata: Metadata = {
   title: "BizTrack",
@@ -15,8 +15,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-darkbrown text-slate-900">
-        <AuthProvider>{children}</AuthProvider>
+      <body className="min-h-screen bg-white dark:bg-ink-950 text-slate-900 dark:text-ink-100">
+        <ThemeProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

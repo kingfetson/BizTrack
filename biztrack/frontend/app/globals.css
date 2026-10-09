@@ -54,3 +54,45 @@ a {
     linear-gradient(to bottom, rgb(15 23 42 / 0.04) 1px, transparent 1px);
   background-size: 16px 16px;
 }
+
+/* ==========================================================================
+   Dark mode overrides
+   These make common utility classes automatically dark-aware when
+   <html class="dark"> is set, so pages don't need explicit dark: prefixes
+   on every element.
+   ========================================================================== */
+
+html.dark {
+  color-scheme: dark;
+}
+
+/* Backgrounds */
+html.dark .bg-white { background-color: #0f172a; }         /* ink-900 */
+html.dark .bg-ink-50 { background-color: #080f1e; }        /* ink-950 */
+html.dark .bg-ink-100 { background-color: rgba(255,255,255,0.06); }
+html.dark .bg-slate-50 { background-color: #080f1e; }
+
+/* Text colors */
+html.dark .text-ink-900 { color: #f1f5f9; }                /* ink-100 */
+html.dark .text-ink-800 { color: #e2e8f0; }                /* ink-200 */
+html.dark .text-ink-700 { color: #cbd5e1; }                /* ink-300 */
+html.dark .text-ink-600 { color: #94a3b8; }                /* ink-400 */
+html.dark .text-ink-500 { color: #94a3b8; }                /* ink-400 */
+html.dark .text-ink-400 { color: #64748b; }                /* ink-500 */
+html.dark .text-slate-900 { color: #f1f5f9; }
+html.dark .text-slate-600 { color: #cbd5e1; }
+html.dark .text-slate-500 { color: #94a3b8; }
+
+/* Borders */
+html.dark .border-ink-100 { border-color: rgba(255,255,255,0.06); }
+html.dark .border-ink-200 { border-color: rgba(255,255,255,0.10); }
+html.dark .border-ink-200\/70 { border-color: rgba(255,255,255,0.10); }
+html.dark .border-slate-200 { border-color: rgba(255,255,255,0.10); }
+html.dark .border-slate-100 { border-color: rgba(255,255,255,0.06); }
+html.dark .border-ink-300 { border-color: rgba(255,255,255,0.15); }
+
+/* Hover backgrounds */
+html.dark .hover\:bg-ink-50:hover { background-color: rgba(255,255,255,0.04); }
+html.dark .hover\:bg-ink-100:hover { background-color: rgba(255,255,255,0.06); }
+html.dark .hover\:bg-slate-50:hover { background-color: rgba(255,255,255,0.04); }
+html.dark .hover\:bg-slate-100:hover { background-color: rgba(255,255,255,0.06); }

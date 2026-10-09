@@ -5,8 +5,8 @@ type Props = {
 };
 
 const variants = {
-  light: "bg-white border border-ink-200/70 shadow-soft",
-  elevated: "bg-white border border-ink-200/60 shadow-card",
+  light: "bg-white dark:bg-ink-900 border border-ink-200/70 dark:border-white/10 shadow-soft",
+  elevated: "bg-white dark:bg-ink-900 border border-ink-200/60 dark:border-white/10 shadow-card",
   dark: "bg-ink-900/80 backdrop-blur border border-white/5 shadow-elevated text-white",
 };
 
