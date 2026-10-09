@@ -32,6 +32,12 @@ class Sale(models.Model):
     # Optional customer info (we'll build a proper Customer model later)
     customer_name = models.CharField(max_length=200, blank=True)
     customer_phone = models.CharField(max_length=30, blank=True)
+    customer = models.ForeignKey(
+        "customers.Customer",
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="sales",
+    )
 
     total = models.DecimalField(
         max_digits=12, decimal_places=2, default=0,

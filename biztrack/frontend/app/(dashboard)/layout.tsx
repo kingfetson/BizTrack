@@ -11,7 +11,8 @@ const nav = [
   { label: "Products", href: "/dashboard/products", icon: "◫" },
   { label: "Categories", href: "/dashboard/products/categories", icon: "❏" },
   { label: "Sales", href: "/dashboard/sales", icon: "₵" },
-  { label: "Customers", href: "#", icon: "◍", soon: true },
+  { label: "Customers", href: "/dashboard/customers", icon: "◍" },
+  { label: "Suppliers", href: "/dashboard/suppliers", icon: "◆" },
   { label: "Reports", href: "#", icon: "▤", soon: true },
 ];
 

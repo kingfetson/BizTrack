@@ -18,6 +18,7 @@ def record_sale(
     items_data,
     user=None,
     payment_method=Sale.PaymentMethod.CASH,
+    customer=None,
     customer_name="",
     customer_phone="",
     note="",
@@ -28,19 +29,27 @@ def record_sale(
     items_data: list of dicts like:
         [{"product_id": 1, "quantity": 2, "unit_price": "60.00"}, ...]
 
-    If any item can't be fulfilled (insufficient stock, bad product), the
-    whole sale rolls back and a SaleError is raised.
+    customer: optional Customer instance. If provided, its name and phone
+    are snapshotted into customer_name/customer_phone unless explicitly set.
 
-    Returns the created Sale instance.
+    Raises SaleError on any failure. Rolls back everything.
     """
     if not items_data:
         raise SaleError("A sale must have at least one item.")
 
+    # If a customer is linked, snapshot their details unless explicitly overridden
+    if customer is not None:
+        if not customer_name:
+            customer_name = customer.name
+        if not customer_phone:
+            customer_phone = customer.phone
+
     sale = Sale.objects.create(
         business=business,
-        payment_method=payment_method,
+        customer=customer,
         customer_name=customer_name,
         customer_phone=customer_phone,
+        payment_method=payment_method,
         note=note,
         created_by=user if getattr(user, "is_authenticated", False) else None,
         total=Decimal("0.00"),
@@ -49,7 +58,6 @@ def record_sale(
     total = Decimal("0.00")
     product_ids = [item["product_id"] for item in items_data]
 
-    # Fetch all products in one query, scoped to this business (multi-tenant safety)
     products = {
         p.id: p
         for p in Product.objects.filter(
@@ -69,7 +77,6 @@ def record_sale(
         if product is None:
             raise SaleError(f"Product {product_id} not found in this business.")
 
-        # Create the line item with a snapshot of name/sku/price
         subtotal = unit_price * quantity
         SaleItem.objects.create(
             sale=sale,
@@ -81,8 +88,6 @@ def record_sale(
             subtotal=subtotal,
         )
 
-        # Decrement stock via Stage 3 service.
-        # Raises ValueError if there isn't enough - caught below and re-raised.
         try:
             adjust_stock(
                 product=product,
@@ -110,7 +115,6 @@ def void_sale(sale, user=None, reason=""):
     if sale.status == Sale.Status.VOIDED:
         raise SaleError("Sale is already voided.")
 
-    # Restore stock for every item
     for item in sale.items.all():
         adjust_stock(
             product=item.product,
@@ -120,8 +124,10 @@ def void_sale(sale, user=None, reason=""):
             user=user,
         )
 
+    from django.utils import timezone
+
     sale.status = Sale.Status.VOIDED
-    sale.voided_at = Sale._meta.get_field("created_at").default()  # timezone.now
+    sale.voided_at = timezone.now()
     sale.voided_by = user if getattr(user, "is_authenticated", False) else None
     sale.void_reason = reason
     sale.save(update_fields=["status", "voided_at", "voided_by", "void_reason"])

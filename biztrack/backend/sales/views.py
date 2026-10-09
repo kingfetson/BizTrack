@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from businesses.models import Business
+from customers.models import Customer
 from .models import Sale
 from .permissions import IsBusinessMember, IsSaleVoider
 from .serializers import (
@@ -49,6 +50,10 @@ class SaleListCreateView(BusinessScopedView, generics.ListCreateAPIView):
         if payment:
             qs = qs.filter(payment_method=payment)
 
+        customer = self.request.query_params.get("customer")
+        if customer:
+            qs = qs.filter(customer_id=customer)
+
         return qs
 
     def create(self, request, *args, **kwargs):
@@ -56,12 +61,25 @@ class SaleListCreateView(BusinessScopedView, generics.ListCreateAPIView):
         serializer = CreateSaleSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        customer = None
+        customer_id = serializer.validated_data.get("customer_id")
+        if customer_id:
+            customer = Customer.objects.filter(
+                business=business, pk=customer_id
+            ).first()
+            if customer is None:
+                return Response(
+                    {"detail": "Customer not found in this business."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
         try:
             sale = record_sale(
                 business=business,
                 items_data=serializer.validated_data["items"],
                 user=request.user,
                 payment_method=serializer.validated_data["payment_method"],
+                customer=customer,
                 customer_name=serializer.validated_data.get("customer_name", ""),
                 customer_phone=serializer.validated_data.get("customer_phone", ""),
                 note=serializer.validated_data.get("note", ""),

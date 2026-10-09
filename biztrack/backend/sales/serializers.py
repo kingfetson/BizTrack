@@ -17,12 +17,13 @@ class SaleSerializer(serializers.ModelSerializer):
     items = SaleItemSerializer(many=True, read_only=True)
     created_by_email = serializers.EmailField(source="created_by.email", read_only=True, default=None)
     voided_by_email = serializers.EmailField(source="voided_by.email", read_only=True, default=None)
+    customer_id = serializers.IntegerField(source="customer.id", read_only=True, default=None)
     item_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Sale
         fields = [
-            "id", "customer_name", "customer_phone",
+            "id", "customer", "customer_id", "customer_name", "customer_phone",
             "total", "payment_method", "status", "note",
             "created_by", "created_by_email", "created_at",
             "voided_at", "voided_by", "voided_by_email", "void_reason",
@@ -46,12 +47,12 @@ class CreateSaleSerializer(serializers.Serializer):
         choices=Sale.PaymentMethod.choices,
         default=Sale.PaymentMethod.CASH,
     )
+    customer_id = serializers.IntegerField(required=False, allow_null=True, default=None)
     customer_name = serializers.CharField(max_length=200, required=False, allow_blank=True, default="")
     customer_phone = serializers.CharField(max_length=30, required=False, allow_blank=True, default="")
     note = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
 
     def validate_items(self, value):
-        # Reject duplicate products - each product should appear once
         product_ids = [item["product_id"] for item in value]
         if len(product_ids) != len(set(product_ids)):
             raise serializers.ValidationError(

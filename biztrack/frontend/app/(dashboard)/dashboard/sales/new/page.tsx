@@ -7,6 +7,7 @@ import Card from "@/components/ui/Card";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import ProductPicker from "@/components/ProductPicker";
+import CustomerPicker from "@/components/CustomerPicker";
 import { api } from "@/lib/api";
 import { useBusiness } from "@/lib/business";
 
@@ -15,6 +16,13 @@ type Product = {
   name: string;
   sku: string;
   price: string;
+};
+
+type Customer = {
+  id: number;
+  name: string;
+  phone: string;
+  email: string;
 };
 
 type CartItem = {
@@ -36,6 +44,7 @@ export default function NewSalePage() {
   const { activeBusiness } = useBusiness();
 
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("CASH");
@@ -72,6 +81,15 @@ export default function NewSalePage() {
     setCart((prev) => prev.filter((c) => c.product.id !== id));
   }
 
+  function handleSelectCustomer(c: Customer | null) {
+    setSelectedCustomer(c);
+    if (c) {
+      // Autofill the free-text fields from the saved customer
+      setCustomerName(c.name);
+      setCustomerPhone(c.phone || "");
+    }
+  }
+
   const subtotal = cart.reduce(
     (sum, c) => sum + Number(c.unit_price) * c.quantity,
     0
@@ -94,6 +112,7 @@ export default function NewSalePage() {
           unit_price: c.unit_price,
         })),
         payment_method: paymentMethod,
+        customer_id: selectedCustomer?.id ?? null,
         customer_name: customerName,
         customer_phone: customerPhone,
         note,
@@ -102,7 +121,6 @@ export default function NewSalePage() {
         `/businesses/${activeBusiness.id}/sales/`,
         { method: "POST", body: JSON.stringify(payload) }
       );
-      // replace, not push — Back should go to the list, not the form
       router.replace(`/dashboard/sales/${sale.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to record sale");
@@ -224,6 +242,18 @@ export default function NewSalePage() {
             <Card className="p-6">
               <h2 className="text-[15px] font-semibold text-ink-900 mb-4">Customer</h2>
               <div className="space-y-3">
+                <div>
+                  <label className="block text-[13px] font-medium text-ink-700 mb-1.5">
+                    Saved customer
+                  </label>
+                  {activeBusiness && (
+                    <CustomerPicker
+                      businessId={activeBusiness.id}
+                      selectedId={selectedCustomer?.id ?? null}
+                      onSelect={handleSelectCustomer}
+                    />
+                  )}
+                </div>
                 <Input
                   label="Name"
                   name="customer_name"
