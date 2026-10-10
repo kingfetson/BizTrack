@@ -96,3 +96,29 @@ html.dark .hover\:bg-ink-50:hover { background-color: rgba(255,255,255,0.04); }
 html.dark .hover\:bg-ink-100:hover { background-color: rgba(255,255,255,0.06); }
 html.dark .hover\:bg-slate-50:hover { background-color: rgba(255,255,255,0.04); }
 html.dark .hover\:bg-slate-100:hover { background-color: rgba(255,255,255,0.06); }
+
+/* ==========================================================================
+   Print styles for POS receipts
+   ========================================================================== */
+@media print {
+  /* Hide everything by default */
+  body * { visibility: hidden; }
+
+  /* Show only the print-only receipt */
+  .print\:block, .print\:block * { visibility: visible; }
+
+  /* Reset colors and layout for print */
+  body {
+    background: white !important;
+    color: black !important;
+    margin: 0;
+    padding: 0;
+  }
+  .print\:block {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm; /* standard thermal receipt width */
+    padding: 4mm;
+  }
+}

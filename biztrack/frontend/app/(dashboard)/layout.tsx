@@ -9,6 +9,7 @@ import { useTheme } from "@/lib/theme";
 
 const nav = [
   { label: "Dashboard", href: "/dashboard", icon: "▦" },
+  { label: "POS", href: "/pos", icon: "⎔" },
   { label: "Products", href: "/dashboard/products", icon: "◫" },
   { label: "Categories", href: "/dashboard/products/categories", icon: "❏" },
   { label: "Sales", href: "/dashboard/sales", icon: "₵" },
